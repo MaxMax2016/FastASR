@@ -40,6 +40,7 @@ void relu(Tensor<float> *din)
 
 void swish(Tensor<float> *din)
 {
+    // relu(din);
     int i;
     for (i = 0; i < din->buff_size; i++) {
         float val = din->buff[i];

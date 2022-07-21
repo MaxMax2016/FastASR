@@ -203,8 +203,8 @@ string Model::rescoring()
     vector<int> result;
     for (auto hyps_it = hyps.begin(); hyps_it != hyps.end(); hyps_it++) {
         float tmp_scorce = 0.5 * hyps_it->prob + scorce.buff[i];
-        // printf("score is %f %f %f\n", tmp_scorce, hyps_it->prob,
-        //        scorce.buff[i]);
+        printf("score is %f %f %f\n", tmp_scorce, hyps_it->prob,
+               scorce.buff[i]);
         if (tmp_scorce > max) {
             max = tmp_scorce;
             result = hyps_it->prefix;
