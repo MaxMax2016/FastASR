@@ -20,6 +20,7 @@ class Model {
     FeatureExtract *fe;
     float *params_addr;
     int vocab_size;
+    int aligned_vocab_size;
     Encoder *encoder;
     Decoder *decoder;
     CTCdecode *ctc;

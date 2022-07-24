@@ -1,9 +1,11 @@
 
 #include <math.h>
+#include <omp.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include "Tensor.h"
+#include "predefine_coe.h"
 void SaveDataFile(const char *filename, void *data, uint32_t len)
 {
     FILE *fp;
@@ -38,15 +40,56 @@ void relu(Tensor<float> *din)
     }
 }
 
-void swish(Tensor<float> *din)
+void swish_lut(Tensor<float> *din)
 {
     // relu(din);
     int i;
     for (i = 0; i < din->buff_size; i++) {
         float val = din->buff[i];
-        din->buff[i] = val / (1 + exp(-val));
+        if (val < -10) {
+            din->buff[i] = 0;
+        } else if (val < 10) {
+            int idx = (val + 10) * 1000;
+            float *tmp_val = (float *)(swish_table_hex + idx);
+            din->buff[i] = *tmp_val;
+        }
     }
 }
+void swish(Tensor<float> *din)
+{
+    // relu(din);
+    swish_lut(din);
+    // int i;
+    // for (i = 0; i < din->buff_size; i++) {
+    //     float val = din->buff[i];
+    //     din->buff[i] = val / (1 + exp(-val));
+    // }
+}
+
+// void softmax(float *din, int mask, int len)
+// {
+//     float *tmp = (float *)malloc(mask * sizeof(float));
+//     int i;
+//     float sum = 0;
+//     float max = -INFINITY;
+
+//     for (i = 0; i < mask; i++) {
+//         max = max < din[i] ? din[i] : max;
+//     }
+//     max = max * 0.9;
+
+//     for (i = 0; i < mask; i++) {
+//         tmp[i] = exp(din[i] - max);
+//         sum += tmp[i];
+//     }
+//     for (i = 0; i < mask; i++) {
+//         din[i] = tmp[i] / sum;
+//     }
+//     free(tmp);
+//     for (i = mask; i < len; i++) {
+//         din[i] = 0;
+//     }
+// }
 
 void softmax(float *din, int mask, int len)
 {
@@ -58,11 +101,16 @@ void softmax(float *din, int mask, int len)
     for (i = 0; i < mask; i++) {
         max = max < din[i] ? din[i] : max;
     }
-    max = max * 0.9;
 
     for (i = 0; i < mask; i++) {
-        tmp[i] = exp(din[i] - max);
-        sum += tmp[i];
+        float fval = (din[i] - max);
+        if (fval > -10) {
+            int idx = (fval + 10) * 100 - 1;
+            tmp[i] = *(float *)(exp_table_hex + idx);
+            sum += tmp[i];
+        } else {
+            tmp[i] = 0;
+        }
     }
     for (i = 0; i < mask; i++) {
         din[i] = tmp[i] / sum;

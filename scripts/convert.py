@@ -3,6 +3,7 @@
 import pickle
 import numpy as np
 import sys
+import math
 
 
 def decoder(idx, bb, wfid):
@@ -245,6 +246,11 @@ wfid.write(a.tobytes())
 a = bb['ctc.ctc_lo.bias']
 wfid.write(a.tobytes())
 
+n = math.ceil(a.size / 8) * 8 - a.size
+a = np.zeros(n, dtype=np.float32)
+n = wfid.write(a.tobytes())
+print('n is {}'.format(n))
+
 
 a = bb['decoder.embed.0.weight']
 wfid.write(a.tobytes())
@@ -262,6 +268,10 @@ a = bb['decoder.output_layer.weight']
 wfid.write(a.tobytes())
 
 a = bb['decoder.output_layer.bias']
+wfid.write(a.tobytes())
+
+n = math.ceil(a.size / 8) * 8 - a.size
+a = np.zeros(n, dtype=np.float32)
 wfid.write(a.tobytes())
 
 wfid.close()

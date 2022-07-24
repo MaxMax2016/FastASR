@@ -37,6 +37,8 @@ Model::Model(const char *path, int mode)
     loadparams(wenet_path.c_str());
     vocab = new Vocab(vocab_path.c_str());
     vocab_size = vocab->size();
+    aligned_vocab_size = (int)ceil((float)vocab_size / 8.0) * 8;
+    printf("aligned_vocab_size is %d\n", aligned_vocab_size);
     params_init();
 
     pos_enc = new PositionEncoding(5000);
@@ -48,7 +50,7 @@ Model::Model(const char *path, int mode)
     encoder_out_cache = new Tensor<float>(1024, 512);
     encoder_out_cache->resize(1, 1, 0, 512);
 
-    // disp_params(params->decoder.sub_decoder[0].self_attn.linear_q_bias, 10);
+    disp_params(params.decoder.embed_weight, 15);
 }
 
 Model::~Model()
@@ -143,6 +145,7 @@ string Model::forward(short *din, int len, int flag)
     fe->insert(din, len, flag);
     fe->fetch(in);
     encoder->forward(in);
+    in->dump();
     encoder_out_cache->concat(in, 2);
     ctc->forward(in);
 
@@ -419,7 +422,7 @@ void param_init_subdecoder(SubDecoderParams &p_in, float *base_addr,
 }
 
 void param_init_decoder(DecoderParams &p_in, float *base_addr, int &offset,
-                        int vocab_size)
+                        int vocab_size, int aligned_vocab_size)
 {
     p_in.embed_weight = base_addr + offset;
     offset += 512 * vocab_size;
@@ -435,7 +438,7 @@ void param_init_decoder(DecoderParams &p_in, float *base_addr, int &offset,
     offset += 512 * vocab_size;
 
     p_in.output_bias = base_addr + offset;
-    offset += vocab_size;
+    offset += aligned_vocab_size;
 }
 
 void Model::params_init()
@@ -447,7 +450,8 @@ void Model::params_init()
     offset += 512 * vocab_size;
 
     params.ctc_bias = params_addr + offset;
-    offset += vocab_size;
+    offset += aligned_vocab_size;
 
-    param_init_decoder(params.decoder, params_addr, offset, vocab_size);
+    param_init_decoder(params.decoder, params_addr, offset, vocab_size,
+                       aligned_vocab_size);
 }
